@@ -1,0 +1,894 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Viral Clipper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0e12; --panel: #16181f; --panel-2: #1d2029; --line: #2a2e3a; --log: #0a0b0e;
+    --text: #e9ebf1; --muted: #9096a6; --faint: #626878;
+    --accent: #ffd23f; --accent-ink: #1a1400; --good: #3ecf8e; --bad: #ff6b6b; --warn: #ffb547; --link: #8ab4ff;
+    --yt: #ff3b3b; --radius: 12px; color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg: #f5f6f8; --panel: #ffffff; --panel-2: #f0f1f4; --line: #dfe2e8; --log: #f7f8fa;
+            --text: #16181f; --muted: #5d6374; --faint: #8a90a0; --accent: #f5c400; --accent-ink: #1a1400;
+            --good: #14935b; --bad: #d63c3c; --warn: #b86e00; --link: #2d63d8; color-scheme: light; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 Inter, system-ui, sans-serif; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  a { color: var(--link); }
+  [hidden] { display: none !important; }
+
+  header { display: flex; align-items: center; gap: 14px; padding: 12px 24px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); z-index: 5; flex-wrap: wrap; }
+  .logo { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 700; }
+  header h1 { font-size: 16px; margin: 0; font-weight: 600; }
+  nav { display: flex; gap: 4px; margin-left: 12px; }
+  nav button { background: none; border: 0; padding: 7px 12px; border-radius: 8px; cursor: pointer; color: var(--muted); font-weight: 500; }
+  nav button:hover { color: var(--text); }
+  nav button.on { background: var(--panel-2); color: var(--text); }
+  nav .count { background: var(--accent); color: var(--accent-ink); border-radius: 999px; font-size: 11px; padding: 0 6px; margin-left: 4px; font-weight: 700; }
+  header .spacer { flex: 1; }
+  .pill { display: flex; align-items: center; gap: 8px; padding: 5px 12px 5px 6px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); cursor: pointer; color: var(--muted); font-size: 13px; }
+  .pill:hover { border-color: var(--muted); }
+  .pill img, .pill .ph { width: 24px; height: 24px; border-radius: 50%; background: var(--yt); display: grid; place-items: center; color: #fff; font-size: 11px; }
+  .pill b { color: var(--text); font-weight: 600; }
+  .gbtn { display: inline-flex; align-items: center; gap: 10px; background: #fff; color: #1f1f1f; border: 1px solid #dadce0; border-radius: 999px; padding: 7px 16px 7px 12px; font: 500 14px/1 Inter, system-ui, sans-serif; cursor: pointer; text-decoration: none; }
+  .gbtn:hover { background: #f7f8f8; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+  .gbtn.big { padding: 11px 22px 11px 16px; font-size: 15px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); margin-left: 6px; }
+  .dot.ok { background: var(--good); }
+
+  main { display: grid; grid-template-columns: 370px 1fr; gap: 24px; padding: 24px; max-width: 1560px; margin: 0 auto; }
+  main.single { grid-template-columns: 1fr 340px; }
+  @media (max-width: 1000px) { main, main.single { grid-template-columns: 1fr; padding: 16px; } header { padding: 10px 16px; } nav { margin-left: 0; } }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+  .panel + .panel { margin-top: 16px; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin: 0 0 14px; font-weight: 600; }
+
+  label { display: block; font-size: 12px; color: var(--muted); margin: 12px 0 6px; font-weight: 500; }
+  input[type=text], input[type=number], input[type=password], input[type=datetime-local], input[type=time], select, textarea {
+    width: 100%; padding: 9px 11px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; outline: none; }
+  textarea { resize: vertical; min-height: 92px; line-height: 1.45; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .hint { font-size: 12px; color: var(--faint); margin-top: 6px; }
+
+  .drop { margin-top: 10px; border: 1.5px dashed var(--line); border-radius: 10px; padding: 14px; text-align: center; color: var(--muted); cursor: pointer; font-size: 13px; transition: .15s; }
+  .drop.over, .drop:hover { border-color: var(--accent); color: var(--text); }
+  .drop.has { border-style: solid; border-color: var(--good); color: var(--text); }
+
+  .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mode { border: 1px solid var(--line); border-radius: 10px; padding: 10px; cursor: pointer; background: var(--panel-2); margin: 0; }
+  .mode input { display: none; }
+  .mode b { display: block; font-size: 13px; font-weight: 600; color: var(--text); }
+  .mode span { font-size: 11.5px; color: var(--muted); }
+  .mode:has(input:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+
+  .swatches { display: flex; gap: 8px; }
+  .sw { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; margin: 0; }
+  .sw input { display: none; }
+  .sw:has(input:checked) { border-color: var(--text); outline: 2px solid var(--bg); outline-offset: -4px; }
+
+  details.more { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
+  summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+  .check { display: flex; gap: 8px; align-items: center; margin-top: 12px; color: var(--muted); font-size: 13px; }
+  .check input { accent-color: var(--accent); }
+
+  .btn { border: 1px solid var(--line); background: var(--panel-2); padding: 8px 14px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--text); font-size: 13px; white-space: nowrap; }
+  .btn:hover { border-color: var(--muted); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.accent { background: var(--accent); color: var(--accent-ink); border: 0; font-weight: 600; }
+  .btn.yt { background: var(--yt); color: #fff; border: 0; font-weight: 600; }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border: 0; font-weight: 600; width: 100%; justify-content: center; padding: 12px; margin-top: 18px; font-size: 14px; }
+  .btn.danger { color: var(--bad); }
+  .btn.small { padding: 5px 10px; font-size: 12px; }
+  .error { color: var(--bad); font-size: 13px; margin-top: 10px; min-height: 1em; }
+
+  .history { list-style: none; margin: 0; padding: 0; max-height: 420px; overflow: auto; }
+  .history li { display: flex; gap: 10px; align-items: center; padding: 9px 10px; border-radius: 8px; cursor: pointer; }
+  .history li:hover, .history li.active { background: var(--panel-2); }
+  .history .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .history .d { font-size: 11px; color: var(--faint); }
+  .empty { color: var(--faint); font-size: 13px; }
+
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--panel-2); color: var(--muted); white-space: nowrap; font-weight: 500; border: 1px solid var(--line); }
+  .badge.running, .badge.queued, .badge.stopping, .badge.uploading { color: var(--warn); }
+  .badge.done, .badge.live { color: var(--good); }
+  .badge.failed, .badge.interrupted { color: var(--bad); }
+  .badge.stopped, .badge.draft { color: var(--warn); }
+  .badge.scheduled { color: var(--link); }
+
+  .welcome { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .welcome h3 { color: var(--text); font-size: 20px; margin: 0 0 8px; }
+  .steps { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 26px; }
+  .steps div { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; width: 180px; text-align: left; font-size: 13px; }
+  .steps b { display: block; color: var(--text); margin-bottom: 2px; }
+  .steps i { font-style: normal; color: var(--accent); font-weight: 700; margin-right: 4px; }
+
+  .run-head { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+  .run-head h3 { margin: 0; font-size: 18px; word-break: break-word; }
+  .run-meta { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+  .bar { height: 8px; background: var(--panel-2); border-radius: 999px; overflow: hidden; margin: 16px 0 8px; }
+  .bar div { height: 100%; background: var(--accent); width: 0; transition: width .4s; }
+  .bar.done div { background: var(--good); }
+  .bar.failed div, .bar.interrupted div { background: var(--bad); }
+  .stage { font-size: 13px; color: var(--muted); }
+  details.logbox { margin-top: 12px; }
+  .log { margin-top: 10px; background: var(--log); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; height: 220px; overflow: auto; font: 12px/1.55 "JetBrains Mono", monospace; color: var(--muted); white-space: pre-wrap; word-break: break-word; }
+  .log .err { color: var(--bad); }
+
+  .results-head { display: flex; align-items: center; gap: 8px; margin: 26px 0 14px; flex-wrap: wrap; }
+  .results-head h2 { margin: 0; flex: 1; }
+  .cards { display: flex; flex-direction: column; gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); display: grid; grid-template-columns: 230px 1fr; overflow: hidden; }
+  @media (max-width: 700px) { .card { grid-template-columns: 1fr; } }
+  .card .media { background: #000; display: flex; align-items: center; }
+  .card video { width: 100%; aspect-ratio: 9/16; display: block; object-fit: contain; }
+  .card .nov { width: 100%; aspect-ratio: 16/9; background: var(--panel-2) center/cover no-repeat; display: grid; place-items: center; text-decoration: none; }
+  .card .nov span { background: rgba(0,0,0,.7); padding: 6px 12px; border-radius: 999px; color: #fff; font-size: 12px; }
+  .card .body { padding: 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .card .top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .card .num { font-weight: 700; color: var(--faint); }
+  .score { background: var(--accent) !important; color: var(--accent-ink) !important; font-weight: 700 !important; border: 0 !important; }
+  .flabel { display: flex; justify-content: space-between; align-items: baseline; margin: 10px 0 5px; font-size: 12px; color: var(--muted); font-weight: 500; }
+  .counter { font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .counter.over { color: var(--bad); font-weight: 600; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; min-height: 40px; cursor: text; }
+  .chips:focus-within { border-color: var(--accent); }
+  .chip { display: inline-flex; align-items: center; gap: 4px; background: var(--panel); border: 1px solid var(--line); color: var(--link); padding: 2px 4px 2px 9px; border-radius: 999px; font-size: 12.5px; }
+  .chip button { background: none; border: 0; color: var(--faint); cursor: pointer; padding: 0 4px; font-size: 14px; line-height: 1; }
+  .chip button:hover { color: var(--bad); }
+  .chips input { flex: 1; min-width: 110px; background: none; border: 0; outline: none; padding: 3px 4px; font-size: 13px; }
+  .facts { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 12.5px; color: var(--muted); }
+  .facts b { color: var(--text); font-weight: 600; }
+  .why { color: var(--muted); font-size: 12.5px; font-style: italic; margin-top: 8px; }
+  details.preview { margin-top: 10px; background: var(--panel-2); border-radius: 8px; padding: 8px 12px; }
+  details.preview summary { font-size: 12.5px; }
+  details.preview pre { white-space: pre-wrap; word-break: break-word; font: 12.5px/1.5 Inter, system-ui, sans-serif; margin: 8px 0 4px; color: var(--text); }
+  .card .actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
+  .up { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 9px 12px; border-radius: 8px; background: var(--panel-2); font-size: 13px; flex-wrap: wrap; }
+  .up .mini { flex: 1; min-width: 80px; height: 6px; background: var(--line); border-radius: 999px; overflow: hidden; }
+  .up .mini div { height: 100%; background: var(--yt); transition: width .4s; }
+  .saved-note { font-size: 12px; color: var(--good); }
+
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none; place-items: center; z-index: 10; padding: 16px; overflow: auto; }
+  .modal.open { display: grid; }
+  .modal > .panel { width: 100%; max-width: 480px; }
+  .modal.wide > .panel { max-width: 600px; }
+  .modal .btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+  .choice { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; cursor: pointer; margin: 8px 0 0; background: var(--panel-2); }
+  .choice input { margin-top: 3px; accent-color: var(--accent); }
+  .choice b { display: block; color: var(--text); font-size: 13.5px; }
+  .choice span { font-size: 12px; color: var(--muted); }
+  .choice:has(input:checked) { border-color: var(--accent); }
+  .note { font-size: 12.5px; color: var(--muted); background: var(--panel-2); border-left: 3px solid var(--warn); padding: 10px 12px; border-radius: 6px; margin-top: 14px; }
+  ol.setup { padding-left: 20px; margin: 8px 0; font-size: 13px; color: var(--muted); }
+  ol.setup li { margin: 6px 0; }
+  ol.setup b { color: var(--text); }
+  code { font: 12px "JetBrains Mono", monospace; background: var(--panel-2); padding: 1px 5px; border-radius: 4px; }
+  .chan { display: flex; gap: 14px; align-items: center; }
+  .chan img { width: 56px; height: 56px; border-radius: 50%; }
+  .chan h3 { margin: 0; font-size: 17px; }
+  #ytBody .chan { border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; margin-bottom: 8px; flex-wrap: wrap; }
+  #ytBody .chan img, #ytBody .chan .ph { width: 44px; height: 44px; border-radius: 50%; }
+  #ytBody .chan .ph { background: var(--yt); color: #fff; display: grid; place-items: center; }
+
+  .sched-day { margin-bottom: 20px; }
+  .sched-day h3 { font-size: 13px; color: var(--muted); margin: 0 0 8px; font-weight: 600; }
+  .srow { display: flex; gap: 12px; align-items: center; padding: 11px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .srow .time { font-weight: 700; font-variant-numeric: tabular-nums; width: 62px; }
+  .srow .t { flex: 1; min-width: 160px; }
+  .srow .sub { font-size: 12px; color: var(--faint); }
+  .times { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .times .chip { color: var(--text); }
+
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(90px); background: var(--text); color: var(--bg); padding: 9px 18px; border-radius: 999px; font-weight: 500; transition: .25s; z-index: 20; max-width: 90vw; text-align: center; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">▶</div>
+  <h1>Viral Clipper</h1>
+  <nav>
+    <button id="navCreate" class="on">Create</button>
+    <button id="navSched">Scheduled <span class="count" id="schedCount" hidden></span></button>
+  </nav>
+  <div class="spacer"></div>
+  <div class="pill" id="ytPill" title="Your YouTube channel"><span class="ph">▶</span><span id="ytText">Connect YouTube</span></div>
+  <div class="pill" id="keyPill" title="Claude API key (optional)"><span class="dot" id="keyDot"></span><span id="keyText">Claude key</span></div>
+</header>
+
+<!-- ============ CREATE ============ -->
+<main id="pageCreate">
+  <aside>
+    <form class="panel" id="form">
+      <h2>New run</h2>
+      <label for="source">YouTube link</label>
+      <input type="text" id="source" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
+      <div class="drop" id="drop">…or drop a video file here / click to choose</div>
+      <input type="file" id="file" accept="video/*,audio/*" hidden>
+
+      <label>What to make</label>
+      <div class="modes">
+        <label class="mode"><input type="radio" name="mode" value="clips" checked><b>Shorts</b><span>Download only the chosen clips</span></label>
+        <label class="mode"><input type="radio" name="mode" value="analyze"><b>Analyze only</b><span>Timestamps + titles, no download</span></label>
+        <label class="mode"><input type="radio" name="mode" value="whisper"><b>Whisper</b><span>Transcribe audio locally (more accurate)</span></label>
+        <label class="mode"><input type="radio" name="mode" value="full"><b>Full download</b><span>Grab the whole video</span></label>
+      </div>
+
+      <div class="row">
+        <div><label for="clips">Number of shorts</label><input type="text" id="clips" value="auto"></div>
+        <div><label for="resolution">Resolution</label>
+          <select id="resolution"><option value="1080" selected>1080 × 1920 (fast)</option><option value="1440">1440 × 2560</option><option value="4k">4K 2160 × 3840</option></select></div>
+      </div>
+      <div class="row">
+        <div><label for="min">Min length (s)</label><input type="number" id="min" value="20" min="5"></div>
+        <div><label for="max">Max length (s)</label><input type="number" id="max" value="59" min="6"></div>
+      </div>
+
+      <label>Caption highlight</label>
+      <div class="swatches">
+        <label class="sw" style="background:#ffd23f"><input type="radio" name="hl" value="yellow" checked></label>
+        <label class="sw" style="background:#3ee07a"><input type="radio" name="hl" value="green"></label>
+        <label class="sw" style="background:#3fd8ff"><input type="radio" name="hl" value="cyan"></label>
+        <label class="sw" style="background:#ff4d4d"><input type="radio" name="hl" value="red"></label>
+        <label class="sw" style="background:#ff6bd5"><input type="radio" name="hl" value="pink"></label>
+      </div>
+
+      <details class="more">
+        <summary>More options</summary>
+        <div class="row">
+          <div><label for="layout">Layout</label>
+            <select id="layout"><option value="auto">Auto</option><option value="crop">Face crop</option><option value="blur">Blurred background</option></select></div>
+          <div><label for="language">Language</label><input type="text" id="language" value="auto" placeholder="auto, en, hi…"></div>
+        </div>
+        <div class="row">
+          <div><label for="model">AI model</label>
+            <select id="model"><option value="ollama:qwen3:4b" selected>Local AI, fast (free)</option><option value="ollama:qwen3:8b">Local AI, smarter but slower (free)</option><option value="claude-sonnet-5-5">Claude Sonnet 5.5</option><option value="claude-opus-5-5">Claude Opus 5.5 (best picks)</option><option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (cheapest)</option></select></div>
+          <div><label for="wmodel">Whisper model</label>
+            <select id="wmodel"><option>tiny</option><option>base</option><option selected>small</option><option>medium</option><option>large-v3</option></select></div>
+        </div>
+        <label for="cookies">YouTube login (only if YouTube says "confirm you're not a bot")</label>
+        <select id="cookies"><option value="">Don't use</option><option value="chrome">Chrome</option><option value="firefox">Firefox</option><option value="chromium">Chromium</option><option value="brave">Brave</option><option value="edge">Edge</option><option value="opera">Opera</option><option value="vivaldi">Vivaldi</option></select>
+        <div class="hint">Uses that browser's YouTube cookies so requests count as signed in. They are only sent to YouTube.</div>
+        <label for="font">Caption font</label>
+        <input type="text" id="font" placeholder="Default: Montserrat ExtraBold">
+        <label class="check"><input type="checkbox" id="noupper"> Keep caption casing as spoken (no ALL CAPS)</label>
+      </details>
+
+      <button class="btn primary" id="go" type="submit">Make shorts</button>
+      <div class="error" id="formErr"></div>
+    </form>
+
+    <div class="panel">
+      <h2>Previous runs</h2>
+      <ul class="history" id="history"></ul>
+    </div>
+  </aside>
+
+  <section id="view">
+    <div class="panel welcome">
+      <h3>Turn a long video into Shorts</h3>
+      <div>Paste a YouTube link on the left and hit <b>Make shorts</b>.</div>
+      <div class="steps">
+        <div><b><i>1</i>Pick</b>AI finds the most viral, self-contained moments</div>
+        <div><b><i>2</i>Render</b>9:16 with face crop and animated captions</div>
+        <div><b><i>3</i>Polish</b>Edit titles, descriptions & hashtags</div>
+        <div><b><i>4</i>Post</b>Upload now or schedule to your channel</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ SCHEDULED ============ -->
+<main id="pageSched" class="single" hidden>
+  <section>
+    <div class="results-head" style="margin-top:0">
+      <h2>Uploaded & scheduled shorts</h2>
+      <button class="btn small" id="schedLive">Check status on YouTube</button>
+    </div>
+    <div id="schedList"></div>
+  </section>
+  <aside>
+    <form class="panel" id="postForm">
+      <h2>Posting schedule</h2>
+      <div class="hint" style="margin-top:0">“Next free slot” and “Schedule all” fill these times, one short per slot, day after day.</div>
+      <label>Daily posting times</label>
+      <div class="times" id="timesList"></div>
+      <div style="display:flex;gap:8px;margin-top:8px"><input type="time" id="timeAdd"><button type="button" class="btn small" id="timeAddBtn">Add</button></div>
+      <label for="tz">Time zone</label>
+      <input type="text" id="tz" list="tzList" placeholder="Asia/Kolkata">
+      <datalist id="tzList"></datalist>
+      <label class="check"><input type="checkbox" id="credit"> Add a credit line and link to the original video</label>
+      <button class="btn accent" style="margin-top:16px;width:100%;justify-content:center">Save schedule</button>
+      <div class="error" id="postErr"></div>
+    </form>
+    <div class="panel">
+      <h2>Good to know</h2>
+      <div class="hint" style="margin-top:0;font-size:12.5px;line-height:1.55">
+        Scheduled shorts are uploaded right away with a publish time, so <b>YouTube</b> publishes them — your computer can be off.<br><br>
+        YouTube allows about <b>6 API uploads a day</b>. Extra ones fail with a limit message; try them the next day.<br><br>
+        Until Google audits your API project, videos uploaded this way <b>stay private</b>, even when scheduled. Publish them from YouTube Studio → Content → Visibility until then.
+      </div>
+    </div>
+  </aside>
+</main>
+
+<!-- ============ MODALS ============ -->
+<div class="modal" id="keyModal">
+  <form class="panel" id="keyForm">
+    <h2>Claude API key</h2>
+    <div class="hint" style="margin-top:0">Only needed for the Claude models; the free local AI works without it. Get one at <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>. It stays in the local server's memory only — never saved to disk.</div>
+    <label for="keyInput">API key</label>
+    <input type="password" id="keyInput" placeholder="sk-ant-..." autocomplete="off">
+    <div class="error" id="keyErr"></div>
+    <div class="btns"><button type="button" class="btn" data-close>Cancel</button><button class="btn accent">Save</button></div>
+  </form>
+</div>
+
+<div class="modal wide" id="ytModal">
+  <div class="panel">
+    <h2>Your YouTube channel</h2>
+    <div id="ytBody"></div>
+    <div class="error" id="ytErr"></div>
+    <div class="btns"><button type="button" class="btn" data-close>Close</button></div>
+  </div>
+</div>
+
+<div class="modal" id="pubModal">
+  <form class="panel" id="pubForm">
+    <h2 id="pubHead">Post to YouTube</h2>
+    <div id="pubTitle" style="font-weight:600;margin-bottom:6px"></div>
+    <label class="choice"><input type="radio" name="when" value="slot" checked><div><b>Next free slot</b><span id="slotHint">One of your daily posting times</span></div></label>
+    <label class="choice" id="choiceAt"><input type="radio" name="when" value="at"><div><b>Pick a date & time</b><span>YouTube publishes it then</span>
+      <input type="datetime-local" id="pubAt" style="margin-top:8px"></div></label>
+    <label class="choice" id="choiceNow"><input type="radio" name="when" value="now"><div><b>Publish now</b><span>Public as soon as YouTube finishes processing</span></div></label>
+    <label class="choice"><input type="radio" name="when" value="draft"><div><b>Private draft</b><span>Upload only; you publish it yourself in YouTube Studio</span></div></label>
+    <div class="note">If your Google Cloud project hasn't passed YouTube's API audit yet, YouTube keeps API uploads private, even scheduled ones.</div>
+    <div class="error" id="pubErr"></div>
+    <div class="btns"><button type="button" class="btn" data-close>Cancel</button><button class="btn yt" id="pubGo">Upload</button></div>
+  </form>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const api = async (url, opts = {}) => {
+  const r = await fetch(url, {headers: {"Content-Type": "application/json"}, ...opts});
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || `Request failed (${r.status})`);
+  return data;
+};
+const toast = (msg, ms = 1800) => { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), ms); };
+const fmt = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+const ago = s => { const d = (Date.now() / 1000 - s); return d < 60 ? "just now" : d < 3600 ? `${Math.floor(d/60)} min ago` : d < 86400 ? `${Math.floor(d/3600)} h ago` : new Date(s * 1000).toLocaleDateString(); };
+const when = iso => new Date(iso).toLocaleString(undefined, {weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"});
+const compact = n => n == null ? "hidden" : Intl.NumberFormat(undefined, {notation: "compact"}).format(n);
+const GLOGO = `<svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2.1 1.4-4.8 2.3-8.5 2.3-6.2 0-11.5-4.1-13.4-9.9l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>`;
+const ACTIVE = new Set(["queued", "running", "stopping"]);
+const STATUS = {queued: "Starting", running: "Running", stopping: "Stopping", done: "Done", failed: "Failed", stopped: "Stopped", interrupted: "Interrupted"};
+const openModal = id => { $(id).classList.add("open"); };
+const closeModal = el => el.closest(".modal").classList.remove("open");
+$$("[data-close]").forEach(b => b.onclick = () => closeModal(b));
+$$(".modal").forEach(m => m.onclick = e => { if (e.target === m) m.classList.remove("open"); });
+
+let upload = null, current = null, pollTimer = null, logLen = 0, yt = {connected: false}, results = [];
+
+/* ---------- pages ---------- */
+function showPage(p) {
+  $("#pageCreate").hidden = p !== "create"; $("#pageSched").hidden = p !== "sched";
+  $("#navCreate").classList.toggle("on", p === "create"); $("#navSched").classList.toggle("on", p === "sched");
+  if (p === "sched") loadScheduled();
+}
+$("#navCreate").onclick = () => showPage("create");
+$("#navSched").onclick = () => showPage("sched");
+
+/* ---------- Claude key ---------- */
+async function refreshKey() {
+  const s = await api("/api/settings");
+  $("#keyDot").classList.toggle("ok", s.has_key);
+  $("#keyText").textContent = s.has_key ? `Claude ••••${s.key_hint}` : "Claude key";
+  return s.has_key;
+}
+$("#keyPill").onclick = () => { openModal("#keyModal"); $("#keyErr").textContent = ""; $("#keyInput").focus(); };
+$("#keyForm").onsubmit = async e => {
+  e.preventDefault();
+  try { await api("/api/settings", {method: "POST", body: JSON.stringify({api_key: $("#keyInput").value})});
+        $("#keyInput").value = ""; closeModal($("#keyForm")); refreshKey(); toast("API key saved"); }
+  catch (err) { $("#keyErr").textContent = err.message; }
+};
+
+/* ---------- YouTube channel ---------- */
+async function refreshYT(refresh = false) {
+  yt = await api("/api/youtube" + (refresh ? "?refresh=1" : ""));
+  const ch = yt.channel;
+  if (yt.connected && ch && !ch.error) {
+    $("#ytPill").style.cssText = "";
+    $("#ytPill").innerHTML = `${ch.thumbnail ? `<img src="${esc(ch.thumbnail)}" alt="">` : `<span class="ph">▶</span>`}<b>${esc(ch.title)}</b><span class="dot ok"></span>`;
+  } else {
+    $("#ytPill").innerHTML = yt.connected ? `<span class="ph">▶</span><span>Channel problem</span>`
+      : `<span class="gbtn" style="margin:-5px -12px -5px -6px">${GLOGO}Sign in with Google</span>`;
+    $("#ytPill").style.cssText = yt.connected ? "" : "border:0;background:none;padding:0";
+  }
+  const t = yt.settings?.post_times || [];
+  $("#slotHint").textContent = `Next free one of ${t.join(", ")} (${yt.settings?.timezone || ""})`;
+  renderYTModal();
+  return yt;
+}
+
+function renderYTModal() {
+  const b = $("#ytBody"), ch = yt.channel;
+  if (yt.accounts?.length) {
+    b.innerHTML = yt.accounts.map(a => `
+      <div class="chan" style="${a.id === yt.active ? "border-color:var(--good)" : ""}">${a.thumbnail ? `<img src="${esc(a.thumbnail)}" alt="">` : `<span class="ph">▶</span>`}
+        <div style="flex:1;min-width:0"><h3>${esc(a.title || "Channel")}${a.id === yt.active ? ` <span class="badge live">Posting here</span>` : ""}</h3>
+          <div class="hint" style="margin:2px 0 0">${a.error ? `<span style="color:var(--bad)">${esc(a.error)}</span>` : `${esc(a.handle || "")} · ${compact(a.subscribers)} subscribers · ${a.videos} videos`}</div></div>
+        <div class="btns" style="margin:0;flex-wrap:wrap;justify-content:flex-end">
+          ${a.error ? `<a class="btn small" href="/api/youtube/connect">Sign in again</a>`
+            : a.id === yt.active ? "" : `<button class="btn small primary" data-use="${esc(a.id)}">Use this</button>`}
+          ${a.error ? "" : `<a class="btn small" href="https://studio.youtube.com/channel/${esc(a.id)}" target="_blank" rel="noopener">Studio ↗</a>`}
+          <button class="btn small danger" data-out="${esc(a.id)}" data-name="${esc(a.title || "this channel")}">Disconnect</button></div></div>`).join("") + `
+      <div class="btns" style="justify-content:flex-start"><a class="gbtn" href="/api/youtube/connect">${GLOGO}Add another account</a><button class="btn small" id="ytRefresh">Refresh</button></div>
+      <div class="hint">Shorts are posted to the channel marked <b>Posting here</b>. If a Google account has several channels, Google asks which one to use after you sign in. Each channel you add appears in this list.</div>`;
+    b.querySelectorAll("[data-use]").forEach(el => el.onclick = async () => {
+      yt = await api("/api/youtube/active", {method: "POST", body: JSON.stringify({id: el.dataset.use})});
+      await refreshYT(); toast(`Now posting to ${yt.channel?.title || "that channel"}`);
+    });
+    b.querySelectorAll("[data-out]").forEach(el => el.onclick = async () => {
+      if (!confirm(`Disconnect ${el.dataset.name}? Scheduled videos stay scheduled on YouTube.`)) return;
+      await api("/api/youtube/disconnect", {method: "POST", body: JSON.stringify({id: el.dataset.out})});
+      refreshYT(); toast("Disconnected");
+    });
+    $("#ytRefresh").onclick = () => refreshYT(true);
+    return;
+  }
+  b.innerHTML = `
+    ${ch?.error ? `<div class="error">${esc(ch.error)}</div>` : ""}
+    <div class="hint" style="margin-top:0;font-size:13px"><b>One-time step before the first sign-in.</b> Google only shows its sign-in screen to registered apps, so this app needs to be registered under your own free Google Cloud account (about 10 minutes). After that, signing in is one click, like any other site.</div>
+    <ol class="setup">
+      <li>Open <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener">Google Cloud</a> and create a project.</li>
+      <li>Enable <a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener"><b>YouTube Data API v3</b></a>.</li>
+      <li>In <a href="https://console.cloud.google.com/auth/audience" target="_blank" rel="noopener"><b>Audience</b></a>: choose <b>External</b>, then <b>Publish app</b> so any Google account can sign in (in Testing mode only listed test users can, and sign-ins expire every 7 days).</li>
+      <li>In <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener"><b>Credentials</b></a> → Create credentials → OAuth client ID → <b>Desktop app</b>. Download the JSON.</li>
+      <li>Drop that JSON file below, then sign in.</li>
+    </ol>
+    <div class="drop ${yt.has_secret ? "has" : ""}" id="secretDrop">${yt.has_secret ? `✓ client_secret.json added (${yt.secret_type === "web" ? "Web client" : "Desktop client"}) — drop another to replace` : "Drop client_secret.json here / click to choose"}</div>
+    <input type="file" id="secretFile" accept=".json,application/json" hidden>
+    ${yt.secret_type === "web" ? `<div class="hint">Web clients need this exact redirect URI added in Google Cloud: <code>${esc(yt.redirect_uri)}</code></div>` : ""}
+    <div class="btns" style="justify-content:flex-start"><a class="gbtn big" id="ytSignIn" href="/api/youtube/connect" ${yt.has_secret ? "" : 'style="pointer-events:none;opacity:.45"'}>${GLOGO}Sign in with Google</a></div>
+    <div class="hint">Google will say the app isn't verified — it's your own app, so click <b>Advanced → Go to (app name)</b>.</div>`;
+  const d = $("#secretDrop"), f = $("#secretFile");
+  d.onclick = () => f.click();
+  d.ondragover = e => { e.preventDefault(); d.classList.add("over"); };
+  d.ondragleave = () => d.classList.remove("over");
+  d.ondrop = e => { e.preventDefault(); d.classList.remove("over"); e.dataTransfer.files[0] && sendSecret(e.dataTransfer.files[0]); };
+  f.onchange = () => f.files[0] && sendSecret(f.files[0]);
+}
+async function sendSecret(file) {
+  $("#ytErr").textContent = "";
+  const fd = new FormData(); fd.append("file", file);
+  const r = await fetch("/api/youtube/secret", {method: "POST", body: fd});
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) { $("#ytErr").textContent = data.error || "Upload failed"; return; }
+  await refreshYT(); toast("Client file saved — now sign in");
+}
+$("#ytPill").onclick = () => {
+  if (!yt.accounts?.length && yt.has_secret) { location.href = "/api/youtube/connect"; return; }   // straight to Google
+  $("#ytErr").textContent = ""; openModal("#ytModal");
+};
+
+/* ---------- video file upload ---------- */
+const drop = $("#drop");
+drop.onclick = () => $("#file").click();
+drop.ondragover = e => { e.preventDefault(); drop.classList.add("over"); };
+drop.ondragleave = () => drop.classList.remove("over");
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove("over"); if (e.dataTransfer.files[0]) sendFile(e.dataTransfer.files[0]); };
+$("#file").onchange = e => e.target.files[0] && sendFile(e.target.files[0]);
+function sendFile(file) {
+  const fd = new FormData(); fd.append("file", file);
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", "/api/upload");
+  xhr.upload.onprogress = e => { if (e.lengthComputable) drop.textContent = `Uploading ${file.name}… ${Math.round(100 * e.loaded / e.total)}%`; };
+  xhr.onload = () => {
+    const res = JSON.parse(xhr.responseText || "{}");
+    if (xhr.status !== 200) { drop.textContent = res.error || "Upload failed"; return; }
+    upload = res; $("#source").value = ""; drop.classList.add("has");
+    drop.innerHTML = `🎬 ${esc(file.name)} <span style="color:var(--faint)">(click to change)</span>`;
+  };
+  xhr.onerror = () => drop.textContent = "Upload failed";
+  xhr.send(fd);
+}
+$("#source").oninput = () => { if (upload && $("#source").value) { upload = null; drop.classList.remove("has"); drop.textContent = "…or drop a video file here / click to choose"; } };
+
+/* ---------- start a run ---------- */
+$("#form").onsubmit = async e => {
+  e.preventDefault();
+  $("#formErr").textContent = "";
+  if (!$("#model").value.startsWith("ollama:") && !(await refreshKey())) { $("#keyPill").click(); return; }
+  const mode = document.querySelector("input[name=mode]:checked").value;
+  const body = {
+    source: upload ? upload.path : $("#source").value.trim(),
+    source_name: upload ? upload.name : undefined,
+    options: {
+      mode, clips: $("#clips").value, resolution: $("#resolution").value,
+      min_len: $("#min").value, max_len: $("#max").value, language: $("#language").value,
+      layout: $("#layout").value, highlight: document.querySelector("input[name=hl]:checked").value,
+      whisper_model: $("#wmodel").value, model: $("#model").value, font: $("#font").value,
+      no_upper: $("#noupper").checked, cookies_browser: $("#cookies").value,
+    },
+  };
+  $("#go").disabled = true;
+  try { const job = await api("/api/jobs", {method: "POST", body: JSON.stringify(body)}); await loadHistory(); openJob(job.id); }
+  catch (err) { $("#formErr").textContent = err.message; }
+  finally { $("#go").disabled = false; }
+};
+
+/* ---------- history ---------- */
+async function loadHistory() {
+  const items = await api("/api/jobs");
+  $("#history").innerHTML = items.length ? items.map(j => `
+    <li data-id="${esc(j.id)}" class="${j.id === current ? "active" : ""}">
+      <div class="t">${esc(j.video_title || j.source_name)}<div class="d">${ago(j.created)}${j.options?.mode === "analyze" ? " · analyze" : j.options?.resolution ? " · " + esc(j.options.resolution) : ""}</div></div>
+      <span class="badge ${j.status}">${STATUS[j.status] || j.status}</span>
+    </li>`).join("") : `<li class="empty" style="cursor:default">No runs yet</li>`;
+  $$("#history li[data-id]").forEach(li => li.onclick = () => { showPage("create"); openJob(li.dataset.id); });
+}
+
+/* ---------- a run ---------- */
+function openJob(id) {
+  current = id; logLen = 0; results = []; clearTimeout(pollTimer);
+  $$("#history li").forEach(li => li.classList.toggle("active", li.dataset.id === id));
+  $("#view").innerHTML = `
+    <div class="panel">
+      <div class="run-head">
+        <div style="flex:1;min-width:200px"><h3 id="rTitle"></h3><div class="run-meta" id="rMeta"></div></div>
+        <span class="badge" id="rBadge"></span>
+        <button class="btn small danger" id="rStop" hidden>Stop</button>
+        <button class="btn small danger" id="rDel" hidden>Delete run</button>
+      </div>
+      <div class="bar" id="rBar"><div></div></div>
+      <div class="stage" id="rStage"></div>
+      <details class="logbox" id="rLogBox"><summary>Log</summary><div class="log" id="rLog"></div></details>
+    </div>
+    <div id="rResults"></div>`;
+  $("#rStop").onclick = async () => { await api(`/api/jobs/${id}/stop`, {method: "POST"}); toast("Stopping…"); };
+  $("#rDel").onclick = async () => {
+    if (!confirm("Delete this run and its videos? Anything already uploaded stays on YouTube.")) return;
+    try { await api(`/api/jobs/${id}`, {method: "DELETE"}); current = null; location.reload(); }
+    catch (err) { toast(err.message); }
+  };
+  poll(id);
+}
+
+async function poll(id) {
+  if (id !== current) return;
+  let job;
+  try { job = await api(`/api/jobs/${id}?since=${logLen}`); }
+  catch { pollTimer = setTimeout(() => poll(id), 3000); return; }
+  if (id !== current) return;
+
+  const o = job.options || {};
+  $("#rTitle").textContent = job.video_title || job.source_name;
+  $("#rMeta").innerHTML = [
+    job.video_minutes ? `${job.video_minutes} min video` : "",
+    {clips: "Shorts", analyze: "Analyze only", whisper: "Whisper", full: "Full download"}[o.mode],
+    o.resolution ? (o.resolution === "4k" ? "4K" : o.resolution + "p") : "",
+    o.min_len ? `${o.min_len}–${o.max_len}s` : "",
+    /^https?:/.test(job.source) ? `<a href="${esc(job.source)}" target="_blank" rel="noopener">source ↗</a>` : "",
+  ].filter(Boolean).join(" · ");
+  $("#rBadge").className = `badge ${job.status}`;
+  $("#rBadge").textContent = STATUS[job.status] || job.status;
+  $("#rStop").hidden = !ACTIVE.has(job.status);
+  $("#rDel").hidden = ACTIVE.has(job.status);
+  $("#rBar").className = `bar ${job.status}`;
+  $("#rBar div").style.width = `${job.progress || 0}%`;
+  $("#rStage").className = job.status === "failed" ? "stage error" : "stage";
+  $("#rStage").textContent = job.status === "failed" ? (job.error || "Failed — see the log below.") :
+                             job.status === "interrupted" ? "The server was restarted while this was running." : job.stage || "";
+  if (ACTIVE.has(job.status) || job.status === "failed") $("#rLogBox").open = true;
+
+  const logEl = $("#rLog");
+  const atBottom = logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 40;
+  for (const line of job.log) {
+    const div = document.createElement("div");
+    if (/error|traceback|exception|not found|failed/i.test(line)) div.className = "err";
+    div.textContent = line; logEl.appendChild(div);
+  }
+  logLen = job.log_len;
+  if (atBottom) logEl.scrollTop = logEl.scrollHeight;
+
+  if (ACTIVE.has(job.status)) { pollTimer = setTimeout(() => poll(id), 1200); return; }
+  loadHistory();
+  if (!results.length) renderResults(job); else updateUploads(job.results || []);
+  if ((job.results || []).some(c => ["queued", "uploading"].includes(c.upload?.status)))
+    pollTimer = setTimeout(() => poll(id), 1500);
+}
+
+/* ---------- result cards ---------- */
+function tagList(c) {
+  const t = (c.hashtags || []).map(x => x.startsWith("#") ? x : "#" + x);
+  return t;
+}
+function renderResults(job) {
+  results = job.results || [];
+  const box = $("#rResults");
+  if (!results.length) { box.innerHTML = ""; return; }
+  const rendered = results.some(c => c.file);
+  const pending = results.filter(c => c.file && !c.upload).length;
+  box.innerHTML = `
+    <div class="results-head">
+      <h2>${results.length} ${rendered ? "shorts ready" : "moments found"}</h2>
+      ${rendered ? `<button class="btn small yt" id="rAll" ${pending ? "" : "disabled"}>Schedule all (${pending})</button>` : ""}
+      ${rendered ? `<a class="btn small" href="/files/${job.id}/POST_THESE.txt" target="_blank">POST_THESE.txt</a>` : ""}
+      <button class="btn small" id="rOpen">Open folder</button>
+    </div>
+    <div class="cards">${results.map((c, i) => card(job, c, i)).join("")}</div>`;
+  $("#rOpen").onclick = () => api(`/api/jobs/${job.id}/open`, {method: "POST"});
+  if ($("#rAll")) $("#rAll").onclick = () => scheduleAll(job.id);
+  results.forEach((c, i) => wireCard(job, c, i));
+  updateUploads(results);
+}
+
+function card(job, c, i) {
+  const vid = (c.youtube_link || "").match(/v=([\w-]{11})/);
+  const media = c.file
+    ? `<video src="/files/${job.id}/${encodeURIComponent(c.file)}" controls preload="metadata" playsinline></video>`
+    : c.youtube_link ? `<a class="nov" href="${esc(c.youtube_link)}" target="_blank" rel="noopener" style="${vid ? `background-image:url(https://i.ytimg.com/vi/${vid[1]}/hqdefault.jpg)` : ""}"><span>▶ Watch at ${fmt(c.start)}</span></a>` : "";
+  return `<div class="card" id="card${i}">
+    <div class="media">${media}</div>
+    <div class="body">
+      <div class="top">
+        <span class="num">#${i + 1}</span>
+        <span class="badge score">${c.virality_score}/10</span>
+        <span class="badge">${fmt(c.start)} – ${fmt(c.end)}</span>
+        <span class="badge">${c.duration}s</span>
+        ${c.layout ? `<span class="badge">${esc(c.layout)}</span>` : ""}
+      </div>
+      <div class="flabel"><span>Title</span><span class="counter" data-count="title" data-max="100"></span></div>
+      <input type="text" data-f="title" value="${esc(c.title)}" maxlength="150">
+      <div class="flabel"><span>Description</span><span class="counter" data-count="description" data-max="4500"></span></div>
+      <textarea data-f="description" rows="4">${esc(c.description)}</textarea>
+      <div class="flabel"><span>Hashtags <span style="color:var(--faint)">(Enter or space to add · #shorts is added automatically)</span></span><span class="counter" data-count="tags" data-max="15"></span></div>
+      <div class="chips" data-f="hashtags"><input type="text" placeholder="#addhashtag"></div>
+      <div class="facts">
+        ${c.hook_text ? `<span>On-screen hook: <b>${esc(c.hook_text)}</b></span>` : ""}
+      </div>
+      ${c.why_viral ? `<div class="why">Why it could go viral: ${esc(c.why_viral)}</div>` : ""}
+      ${c.post ? `<details class="preview"><summary>What gets posted</summary><pre data-preview></pre>
+        <button class="btn small" data-copyall>Copy title + description</button></details>` : ""}
+      <div class="up" data-up hidden></div>
+      <div class="actions">
+        ${c.file ? `<button class="btn small yt" data-pub>Post to YouTube</button>` : ""}
+        <button class="btn small accent" data-save hidden>Save changes</button>
+        <span class="saved-note" data-saved hidden>Saved ✓</span>
+        ${c.file ? `<a class="btn small" href="/files/${job.id}/${encodeURIComponent(c.file)}?dl=1">⬇ Download</a>` : ""}
+        ${c.youtube_link ? `<a class="btn small" href="${esc(c.youtube_link)}" target="_blank" rel="noopener">Original ↗</a>` : ""}
+      </div>
+    </div></div>`;
+}
+
+function wireCard(job, c, i) {
+  const el = $(`#card${i}`);
+  const q = s => el.querySelector(s);
+  let tags = tagList(c);
+  const chips = q("[data-f=hashtags]"), tagIn = chips.querySelector("input");
+  const dirty = () => { q("[data-save]").hidden = false; q("[data-saved]").hidden = true; counters(); };
+  const counters = () => {
+    const set = (k, n) => { const cEl = q(`[data-count=${k}]`); const max = +cEl.dataset.max; cEl.textContent = `${n}/${max}`; cEl.classList.toggle("over", n > max); };
+    set("title", q("[data-f=title]").value.length);
+    set("description", q("[data-f=description]").value.length);
+    set("tags", tags.length);
+  };
+  const drawChips = () => {
+    chips.querySelectorAll(".chip").forEach(x => x.remove());
+    tags.forEach((t, k) => {
+      const s = document.createElement("span"); s.className = "chip";
+      s.innerHTML = `${esc(t)}<button type="button" title="Remove">×</button>`;
+      s.querySelector("button").onclick = () => { tags.splice(k, 1); drawChips(); dirty(); };
+      chips.insertBefore(s, tagIn);
+    });
+  };
+  const addTag = () => {
+    const words = tagIn.value.split(/[\s,]+/).map(w => w.replace(/[^\p{L}\p{N}_]/gu, "")).filter(Boolean);
+    let added = false;
+    for (const w of words) { const t = "#" + w; if (!tags.some(x => x.toLowerCase() === t.toLowerCase())) { tags.push(t); added = true; } }
+    tagIn.value = ""; if (added) { drawChips(); dirty(); }
+  };
+  tagIn.onkeydown = e => {
+    if (["Enter", " ", ","].includes(e.key)) { e.preventDefault(); addTag(); }
+    else if (e.key === "Backspace" && !tagIn.value && tags.length) { tags.pop(); drawChips(); dirty(); }
+  };
+  tagIn.onblur = addTag;
+  chips.onclick = e => { if (e.target === chips) tagIn.focus(); };
+  q("[data-f=title]").oninput = dirty;
+  q("[data-f=description]").oninput = dirty;
+  drawChips(); counters();
+  const setPreview = post => { const p = q("[data-preview]"); if (p && post) p.textContent = `${post.title}\n\n${post.description}`; };
+  setPreview(c.post);
+
+  const save = async () => {
+    try {
+      const upd = await api(`/api/jobs/${job.id}/clips/${i}`, {method: "PUT", body: JSON.stringify({
+        title: q("[data-f=title]").value, description: q("[data-f=description]").value, hashtags: tags})});
+      results[i] = {...results[i], ...upd}; tags = tagList(upd); drawChips(); counters(); setPreview(upd.post);
+      q("[data-save]").hidden = true; q("[data-saved]").hidden = false;
+      return true;
+    } catch (err) { toast(err.message, 3000); return false; }
+  };
+  q("[data-save]").onclick = save;
+  const ca = q("[data-copyall]");
+  if (ca) ca.onclick = () => navigator.clipboard.writeText(q("[data-preview]").textContent).then(() => toast("Copied"));
+  const pub = q("[data-pub]");
+  if (pub) pub.onclick = async () => {
+    if (!q("[data-save]").hidden && !(await save())) return;
+    openPublish(job.id, i);
+  };
+}
+
+function updateUploads(clips) {
+  clips.forEach((c, i) => {
+    const el = $(`#card${i}`); if (!el) return;
+    const box = el.querySelector("[data-up]"), pub = el.querySelector("[data-pub]");
+    const u = c.upload;
+    results[i] = {...results[i], upload: u};
+    if (!u) { box.hidden = true; if (pub) pub.hidden = false; return; }
+    box.hidden = false;
+    const link = u.video_id ? `<a href="https://studio.youtube.com/video/${esc(u.video_id)}/edit" target="_blank" rel="noopener">Studio ↗</a> <a href="https://youtube.com/shorts/${esc(u.video_id)}" target="_blank" rel="noopener">Watch ↗</a>` : "";
+    if (u.status === "queued") box.innerHTML = `<span class="badge uploading">Waiting to upload</span>`;
+    else if (u.status === "uploading") box.innerHTML = `<span class="badge uploading">Uploading ${u.progress || 0}%</span><div class="mini"><div style="width:${u.progress || 0}%"></div></div>`;
+    else if (u.status === "failed") box.innerHTML = `<span class="badge failed">Upload failed</span><span style="flex:1;color:var(--bad);font-size:12.5px">${esc(u.error)}</span>`;
+    else if (u.publish_at) box.innerHTML = `<span class="badge scheduled">Scheduled</span><span style="flex:1">${when(u.publish_at)}</span>${link}`;
+    else if (u.mode === "now") box.innerHTML = `<span class="badge live">Published</span><span style="flex:1"></span>${link}`;
+    else box.innerHTML = `<span class="badge draft">Private draft</span><span style="flex:1"></span>${link}`;
+    if (pub) pub.hidden = u.status !== "failed";
+  });
+  const pending = results.filter(c => c.file && (!c.upload || c.upload.status === "failed")).length;
+  if ($("#rAll")) { $("#rAll").disabled = !pending; $("#rAll").textContent = `Schedule all (${pending})`; }
+  refreshSchedCount();
+}
+
+/* ---------- post / schedule ---------- */
+let pubTarget = null;
+function needChannel() {
+  if (yt.connected && yt.channel && !yt.channel.error) return false;
+  toast("Connect your YouTube channel first"); $("#ytPill").click(); return true;
+}
+function openPublish(jobId, i) {
+  if (needChannel()) return;
+  pubTarget = {jobId, i, all: false};
+  $("#pubHead").textContent = `Post to ${yt.channel?.title || "YouTube"}`;
+  $("#pubTitle").textContent = results[i].title;
+  $("#choiceAt").hidden = $("#choiceNow").hidden = false;
+  const d = new Date(Date.now() + 2 * 3600e3); d.setMinutes(0, 0, 0);
+  $("#pubAt").value = new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
+  $("#pubAt").min = new Date(Date.now() + 20 * 6e4 - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 16);
+  document.querySelector("input[name=when][value=slot]").checked = true;
+  $("#pubErr").textContent = ""; $("#pubGo").textContent = "Upload";
+  openModal("#pubModal");
+}
+function scheduleAll(jobId) {
+  if (needChannel()) return;
+  pubTarget = {jobId, all: true};
+  const n = results.filter(c => c.file && (!c.upload || c.upload.status === "failed")).length;
+  $("#pubHead").textContent = `Schedule all shorts on ${yt.channel?.title || "YouTube"}`;
+  $("#pubTitle").textContent = `${n} short${n === 1 ? "" : "s"}, one per posting slot`;
+  $("#choiceAt").hidden = $("#choiceNow").hidden = true;
+  document.querySelector("input[name=when][value=slot]").checked = true;
+  $("#pubErr").textContent = ""; $("#pubGo").textContent = `Upload ${n}`;
+  openModal("#pubModal");
+}
+$("#pubAt").onfocus = () => { document.querySelector("input[name=when][value=at]").checked = true; };
+$("#pubForm").onsubmit = async e => {
+  e.preventDefault();
+  const w = document.querySelector("input[name=when]:checked").value;
+  $("#pubErr").textContent = "";
+  try {
+    if (pubTarget.all) {
+      const r = await api(`/api/jobs/${pubTarget.jobId}/publish_all`, {method: "POST", body: JSON.stringify({when: w})});
+      toast(`${r.queued} short${r.queued === 1 ? "" : "s"} queued for upload`);
+    } else {
+      const body = {when: w};
+      if (w === "at") {
+        if (!$("#pubAt").value) throw new Error("Pick a date and time.");
+        body.at = new Date($("#pubAt").value).toISOString();
+      }
+      await api(`/api/jobs/${pubTarget.jobId}/clips/${pubTarget.i}/publish`, {method: "POST", body: JSON.stringify(body)});
+      toast("Upload started");
+    }
+    $("#pubModal").classList.remove("open");
+    clearTimeout(pollTimer); poll(pubTarget.jobId);
+  } catch (err) { $("#pubErr").textContent = err.message; }
+};
+
+/* ---------- scheduled page ---------- */
+async function refreshSchedCount() {
+  try {
+    const {items} = await api("/api/scheduled");
+    const n = items.filter(r => r.publish_at && new Date(r.publish_at) > new Date()).length;
+    $("#schedCount").hidden = !n; $("#schedCount").textContent = n;
+  } catch {}
+}
+async function loadScheduled(live = false) {
+  const box = $("#schedList");
+  if (live) box.style.opacity = .5;
+  let data;
+  try { data = await api("/api/scheduled" + (live ? "?live=1" : "")); }
+  catch (err) { box.innerHTML = `<div class="error">${esc(err.message)}</div>`; return; }
+  box.style.opacity = 1;
+  const items = data.items;
+  if (!items.length) {
+    box.innerHTML = `<div class="panel welcome" style="padding:50px 20px"><h3>Nothing scheduled yet</h3><div>Open a finished run and use <b>Post to YouTube</b> or <b>Schedule all</b>.</div></div>`;
+    return;
+  }
+  const groups = {};
+  for (const r of items) {
+    const key = r.publish_at ? new Date(r.publish_at).toLocaleDateString(undefined, {weekday: "long", day: "numeric", month: "long"})
+              : ["queued", "uploading", "failed"].includes(r.status) ? "In progress" : "Drafts & published now";
+    (groups[key] ||= []).push(r);
+  }
+  box.innerHTML = (data.error ? `<div class="error" style="margin-bottom:12px">${esc(data.error)}</div>` : "") +
+    Object.entries(groups).map(([day, rows]) => `
+    <div class="sched-day"><h3>${esc(day)}</h3>${rows.map(r => {
+      const past = r.publish_at && new Date(r.publish_at) <= new Date();
+      let badge = r.status === "failed" ? `<span class="badge failed">Failed</span>`
+        : ["queued", "uploading"].includes(r.status) ? `<span class="badge uploading">${r.status === "queued" ? "Waiting" : `Uploading ${r.progress || 0}%`}</span>`
+        : r.publish_at ? (past ? `<span class="badge live">Publish time passed</span>` : `<span class="badge scheduled">Scheduled</span>`)
+        : r.mode === "now" ? `<span class="badge live">Published</span>` : `<span class="badge draft">Private draft</span>`;
+      if (r.live?.missing) badge += ` <span class="badge failed">Deleted on YouTube</span>`;
+      else if (r.live?.privacy) badge += ` <span class="badge ${r.live.privacy === "public" ? "live" : "draft"}">YouTube: ${esc(r.live.privacy)}</span>`;
+      const time = r.publish_at ? new Date(r.publish_at).toLocaleTimeString(undefined, {hour: "2-digit", minute: "2-digit"}) : "—";
+      return `<div class="srow"><span class="time">${time}</span>
+        <div class="t">${esc(r.title)}<div class="sub">${r.error ? `<span style="color:var(--bad)">${esc(r.error)}</span>` : r.uploaded_at ? `Uploaded ${esc(new Date(r.uploaded_at).toLocaleString())}` : ""}</div></div>
+        ${badge}
+        ${r.job_id ? `<button class="btn small" data-open="${esc(r.job_id)}">Run</button>` : ""}
+        ${r.video_id ? `<a class="btn small" href="https://studio.youtube.com/video/${esc(r.video_id)}/edit" target="_blank" rel="noopener">Studio ↗</a>` : ""}
+      </div>`;
+    }).join("")}</div>`).join("");
+  $$("[data-open]").forEach(b => b.onclick = () => { showPage("create"); openJob(b.dataset.open); });
+  refreshSchedCount();
+}
+$("#schedLive").onclick = () => { if (!needChannel()) loadScheduled(true); };
+
+/* posting schedule settings */
+let postTimes = [];
+function drawTimes() {
+  $("#timesList").innerHTML = postTimes.map((t, k) => `<span class="chip">${t}<button type="button" data-k="${k}">×</button></span>`).join("") || `<span class="hint">No times yet</span>`;
+  $$("#timesList [data-k]").forEach(b => b.onclick = () => { postTimes.splice(+b.dataset.k, 1); drawTimes(); });
+}
+function fillPostForm() {
+  const s = yt.settings || {};
+  postTimes = [...(s.post_times || [])]; drawTimes();
+  $("#tz").value = s.timezone || ""; $("#credit").checked = !!s.credit_original;
+}
+$("#timeAddBtn").onclick = () => { const v = $("#timeAdd").value; if (v && !postTimes.includes(v)) { postTimes.push(v); postTimes.sort(); drawTimes(); } $("#timeAdd").value = ""; };
+$("#postForm").onsubmit = async e => {
+  e.preventDefault(); $("#postErr").textContent = "";
+  try { yt.settings = await api("/api/youtube/settings", {method: "POST", body: JSON.stringify({post_times: postTimes, timezone: $("#tz").value, credit_original: $("#credit").checked})});
+        fillPostForm(); refreshYT(); toast("Schedule saved"); }
+  catch (err) { $("#postErr").textContent = err.message; }
+};
+try { $("#tzList").innerHTML = Intl.supportedValuesOf("timeZone").map(z => `<option value="${z}">`).join(""); } catch {}
+
+/* ---------- start ---------- */
+(async () => {
+  refreshKey(); loadHistory(); refreshSchedCount();
+  await refreshYT().catch(() => {});
+  fillPostForm();
+  const p = new URLSearchParams(location.search);
+  if (p.has("yt_connected")) { toast("YouTube channel connected ✓", 2500); }
+  if (p.has("yt_error")) { openModal("#ytModal"); $("#ytErr").textContent = p.get("yt_error"); }
+  if (p.has("yt_connected") || p.has("yt_error")) history.replaceState(null, "", "/");
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# secrets and sign-ins: never commit
+client_secret*.json
+token.json
+accounts/
+config.json
+upload_state.json
+*.log
+
+# generated videos and runs
+runs/
+output/
+library/
+
+.venv/
+__pycache__/
+*.pyc

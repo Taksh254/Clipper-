@@ -1,0 +1,22 @@
+{
+  "channels": [
+    "@SomeCreatorWhoAllowsClipping",
+    "https://www.youtube.com/@AnotherCreator"
+  ],
+  "videos_to_check_per_channel": 5,
+  "first_run_take_latest": 1,
+  "min_video_minutes": 4,
+
+  "model": "ollama:qwen3:4b",
+  "clips_per_video": "auto",
+  "resolution": "4k",
+  "language": "en",
+
+  "upload": true,
+  "schedule": true,
+  "timezone": "Asia/Kolkata",
+  "post_times": ["12:00", "17:00", "20:00"],
+  "credit_original": true,
+
+  "library_dir": "library"
+}

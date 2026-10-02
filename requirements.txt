@@ -1,0 +1,8 @@
+yt-dlp
+faster-whisper
+anthropic
+opencv-python-headless<5
+numpy
+google-api-python-client
+google-auth-oauthlib
+flask
